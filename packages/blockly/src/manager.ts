@@ -8,7 +8,13 @@ import { ISignal, Signal } from '@lumino/signaling';
 import * as Blockly from 'blockly';
 
 import { BlocklyRegistry } from './registry';
-import { ToolboxDefinition } from 'blockly/core/utils/toolbox';
+import {
+  BlockInfo, SeparatorInfo,
+  StaticCategoryInfo,
+  ToolboxDefinition,
+  ToolboxInfo,
+  ToolboxItemInfo
+} from 'blockly/core/utils/toolbox';
 
 /**
  * BlocklyManager the manager for each document
@@ -17,6 +23,7 @@ import { ToolboxDefinition } from 'blockly/core/utils/toolbox';
  */
 export class BlocklyManager {
   private _toolbox: string;
+  private _allowedBlocks: string[];
   private _generator: Blockly.Generator;
   private _registry: BlocklyRegistry;
   private _selectedKernel: KernelSpec.ISpecModel;
@@ -37,6 +44,7 @@ export class BlocklyManager {
     this._mimetypeService = mimetypeService;
 
     this._toolbox = 'default';
+    this._filterToolbox();
     this._generator = this._registry.generators.get('python');
 
     this._changed = new Signal<this, BlocklyManager.Change>(this);
@@ -112,6 +120,7 @@ export class BlocklyManager {
     if (this._toolbox !== name) {
       const toolbox = this._registry.toolboxes.get(name);
       this._toolbox = toolbox ? name : 'default';
+      this._filterToolbox();
       this._changed.emit('toolbox');
     }
   }
@@ -127,6 +136,74 @@ export class BlocklyManager {
       list.push({ label: name, value: name });
     });
     return list;
+  }
+
+  /**
+   * Get the list of allowed blocks. If undefined, all blocks are allowed.
+   *
+   * @returns The list of allowed blocks.
+   */
+  getAllowedBlocks() {
+    return this._allowedBlocks;
+  }
+
+  /**
+   * Set the list of allowed blocks. If undefined, all blocks are allowed.
+   *
+   * @param allowedBlocks The list of allowed blocks.
+   */
+  setAllowedBlocks(allowedBlocks: string[]) {
+    this._allowedBlocks = allowedBlocks;
+    this._filterToolbox();
+    this._changed.emit('toolbox');
+  }
+
+  private _filterToolbox() {
+    const toolbox = this._registry.toolboxes.get(this._toolbox) as ToolboxInfo;
+    if (toolbox) {
+      this._filterContents(toolbox.contents);
+    }
+  }
+
+  private _filterContents(contents: ToolboxItemInfo[]): number {
+    let visible = 0;
+    let lastSeparator = 0;
+    contents.forEach(itemInfo => {
+      if ("contents" in itemInfo) {
+        const categoryInfo = itemInfo as StaticCategoryInfo;
+        if (this._filterContents(categoryInfo.contents) > 0) {
+          visible++;
+          categoryInfo.hidden = "false";
+        } else {
+          categoryInfo.hidden = "true";
+        }
+      } else if ("type" in itemInfo) {
+        const blockInfo = itemInfo as BlockInfo;
+        if (this._allowedBlocks === undefined || this._allowedBlocks.includes(blockInfo.type)) {
+          blockInfo.disabled = false;
+          blockInfo.disabledReasons = [];
+          visible++;
+        } else {
+          blockInfo.disabled = true;
+          blockInfo.disabledReasons = ["This block is not allowed"];
+        }
+      } else if ("kind" in itemInfo && itemInfo.kind === "CATEGORY" && "custom" in itemInfo) {
+        if (this._allowedBlocks === undefined || this._allowedBlocks.includes(itemInfo.custom)) {
+          itemInfo['disabled'] = "false";
+          visible++;
+        } else {
+            itemInfo['disabled'] = "true";
+        }
+      } else if ("kind" in itemInfo && itemInfo.kind === "SEP") {
+        // Remove now duplicate separators when blocks/categories are removed between them
+        if (lastSeparator === visible) {
+          itemInfo['hidden'] = true;
+        } else {
+          lastSeparator = visible;
+        }
+      }
+    });
+    return visible;
   }
 
   /**
