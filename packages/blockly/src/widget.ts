@@ -174,6 +174,9 @@ export class BlocklyPanel extends SplitPanel {
             console.warn(`Unknown kernel in blockly file: ` + kernel);
           }
         }
+        if (metadata['allowed_blocks']) {
+          this._manager.setAllowedBlocks(metadata['allowed_blocks']);
+        }
       }
     } else {
       // Unsupported format
@@ -194,6 +197,7 @@ export class BlocklyPanel extends SplitPanel {
         workspace: workspace as any,
         metadata: {
           toolbox: this._manager.getToolbox(),
+          allowed_blocks: this._manager.getAllowedBlocks(),
           kernel: this._manager.kernel
         }
       };
