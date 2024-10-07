@@ -169,36 +169,42 @@ export class BlocklyManager {
   private _filterContents(contents: ToolboxItemInfo[]): number {
     let visible = 0;
     contents.forEach(itemInfo => {
-      if ("kind" in itemInfo) {
-        if (itemInfo.kind.toUpperCase() === "CATEGORY") {
-          if ("contents" in itemInfo) {
+      if ('kind' in itemInfo) {
+        if (itemInfo.kind.toUpperCase() === 'CATEGORY') {
+          if ('contents' in itemInfo) {
             const categoryInfo = itemInfo as StaticCategoryInfo;
             if (this._filterContents(categoryInfo.contents) > 0) {
               visible++;
-              categoryInfo.hidden = "false";
+              categoryInfo.hidden = 'false';
             } else {
-              categoryInfo.hidden = "true";
+              categoryInfo.hidden = 'true';
             }
-          } else if ("custom" in itemInfo) {
+          } else if ('custom' in itemInfo) {
             const categoryInfo = itemInfo as DynamicCategoryInfo;
-            if (this._allowedBlocks === undefined || this._allowedBlocks.includes(categoryInfo.custom.toLowerCase())) {
-              categoryInfo.hidden = "false";
+            if (
+              this._allowedBlocks === undefined ||
+              this._allowedBlocks.includes(categoryInfo.custom.toLowerCase())
+            ) {
+              categoryInfo.hidden = 'false';
               visible++;
-              console.log("Category " + categoryInfo.custom + " is allowed");
+              console.log(`Category ${categoryInfo.custom} is allowed`);
             } else {
-              categoryInfo.hidden = "true";
-              console.log("Category " + categoryInfo.custom + " is not allowed");
+              categoryInfo.hidden = 'true';
+              console.log(`Category ${categoryInfo.custom} is not allowed`);
             }
           }
-        } else if (itemInfo.kind.toUpperCase() === "BLOCK") {
+        } else if (itemInfo.kind.toUpperCase() === 'BLOCK') {
           const blockInfo = itemInfo as BlockInfo;
-          if (this._allowedBlocks === undefined || this._allowedBlocks.includes(blockInfo.type.toLowerCase())) {
+          if (
+            this._allowedBlocks === undefined ||
+            this._allowedBlocks.includes(blockInfo.type.toLowerCase())
+          ) {
             blockInfo.disabled = false;
             blockInfo.disabledReasons = [];
             visible++;
           } else {
             blockInfo.disabled = true;
-            blockInfo.disabledReasons = ["This block is not allowed"];
+            blockInfo.disabledReasons = ['This block is not allowed'];
           }
         }
       }

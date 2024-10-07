@@ -5,9 +5,9 @@ import {
 } from '@jupyterlab/docregistry';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { runIcon } from '@jupyterlab/ui-components';
-import { showErrorMessage } from "@jupyterlab/apputils";
+import { showErrorMessage } from '@jupyterlab/apputils';
 
-import { PartialJSONObject } from "@lumino/coreutils";
+import { PartialJSONObject } from '@lumino/coreutils';
 import { SplitPanel } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 
@@ -148,30 +148,37 @@ export class BlocklyPanel extends SplitPanel {
     // Check if format is set or if we have legacy content
     if (fileFormat === undefined && fileContent['blocks']) {
       // Load legacy content
-      (this.layout as BlocklyLayout).workspace = fileContent as any as Blockly.Workspace;
+      (this.layout as BlocklyLayout).workspace =
+        fileContent as any as Blockly.Workspace;
     } else if (fileFormat === 2) {
       // Load the content from the "workspace" key
-      (this.layout as BlocklyLayout).workspace = fileContent['workspace'] as any as Blockly.Workspace;
+      const workspace = fileContent['workspace'] as any as Blockly.Workspace;
+      (this.layout as BlocklyLayout).workspace = workspace;
       const metadata = fileContent['metadata'];
       if (metadata) {
         if (metadata['toolbox']) {
           const toolbox = metadata['toolbox'];
-          if (this._manager.listToolboxes().find(value => value.value === toolbox)) {
+          if (
+            this._manager.listToolboxes().find(value => value.value === toolbox)
+          ) {
             this._manager.setToolbox(metadata['toolbox']);
           } else {
             // Unknown toolbox
-            showErrorMessage(`Unknown toolbox`,
-                `The toolbox '` + toolbox + `' is not available. Using default toolbox.`
+            showErrorMessage(
+              'Unknown toolbox',
+              `The toolbox '${toolbox}' is not available. Using default toolbox.`
             );
           }
         }
         if (metadata['kernel'] && metadata['kernel'] !== 'No kernel') {
           const kernel = metadata['kernel'];
-          if (this._manager.listKernels().find(value => value.value === kernel)) {
+          if (
+            this._manager.listKernels().find(value => value.value === kernel)
+          ) {
             this._manager.selectKernel(metadata['kernel']);
           } else {
             // Unknown kernel
-            console.warn(`Unknown kernel in blockly file: ` + kernel);
+            console.warn(`Unknown kernel in blockly file: ${kernel}`);
           }
         }
         if (metadata['allowed_blocks']) {
@@ -180,8 +187,9 @@ export class BlocklyPanel extends SplitPanel {
       }
     } else {
       // Unsupported format
-      showErrorMessage(`Unsupported file format`,
-          `The file format '` + fileFormat + `' is not supported by the Blockly editor.`
+      showErrorMessage(
+        'Unsupported file format',
+        `The file format '${fileFormat}' is not supported by the Blockly editor.`
       );
     }
   }
