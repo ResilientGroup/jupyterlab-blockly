@@ -8,7 +8,7 @@ import { runIcon } from '@jupyterlab/ui-components';
 import { showErrorMessage } from '@jupyterlab/apputils';
 
 import { PartialJSONObject } from '@lumino/coreutils';
-import { SplitPanel } from '@lumino/widgets';
+import { SplitPanel } from "@lumino/widgets";
 import { Signal } from '@lumino/signaling';
 
 import type Blockly from 'blockly';
@@ -150,12 +150,20 @@ export class BlocklyPanel extends SplitPanel {
       // Load legacy content
       (this.layout as BlocklyLayout).workspace =
         fileContent as any as Blockly.Workspace;
+      // Required for setting description to empty on legacy format
+      this._manager.setDescription(undefined);
     } else if (fileFormat === 2) {
       // Load the content from the "workspace" key
       const workspace = fileContent['workspace'] as any as Blockly.Workspace;
       (this.layout as BlocklyLayout).workspace = workspace;
       const metadata = fileContent['metadata'];
       if (metadata) {
+        let description = metadata['description'];
+        // Support defining descriptions as an array like a notebook markdown cell
+        if (Array.isArray(description)) {
+          description = description.join('');
+        }
+        this._manager.setDescription(description);
         if (metadata['toolbox']) {
           const toolbox = metadata['toolbox'];
           if (
@@ -184,6 +192,9 @@ export class BlocklyPanel extends SplitPanel {
         if (metadata['allowed_blocks']) {
           this._manager.setAllowedBlocks(metadata['allowed_blocks']);
         }
+      } else {
+        // Required for setting description to empty
+        this._manager.setDescription(undefined);
       }
     } else {
       // Unsupported format
@@ -204,6 +215,7 @@ export class BlocklyPanel extends SplitPanel {
         format: 2,
         workspace: workspace as any,
         metadata: {
+          description: this._manager.getDescription(),
           toolbox: this._manager.getToolbox(),
           allowed_blocks: this._manager.getAllowedBlocks(),
           kernel: this._manager.kernel

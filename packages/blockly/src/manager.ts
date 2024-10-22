@@ -23,6 +23,7 @@ import {
  * user wants to use on a specific document.
  */
 export class BlocklyManager {
+  private _description: string;
   private _toolbox: string;
   private _allowedBlocks: string[];
   private _generator: Blockly.Generator;
@@ -101,6 +102,25 @@ export class BlocklyManager {
    */
   dispose(): void {
     this._sessionContext.kernelChanged.disconnect(this._onKernelChanged, this);
+  }
+
+  /**
+   * Returns the MarkDown description.
+   *
+   * @returns The description string in MarkDown format or undefined if none is set.
+   */
+  getDescription(): string | undefined {
+    return this._description;
+  }
+
+  /**
+   * Set the MarkDown description.
+   *
+   * @param description The description string in MarkDown format.
+   */
+  setDescription(description: string) {
+    this._description = description;
+    this._changed.emit('description');
   }
 
   /**
@@ -261,5 +281,5 @@ export namespace BlocklyManager {
   /**
    * The argument of the signal manager changed.
    */
-  export type Change = 'toolbox' | 'kernel';
+  export type Change = 'toolbox' | 'kernel' | 'description';
 }
