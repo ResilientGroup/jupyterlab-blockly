@@ -16,11 +16,13 @@ import { THEME } from './utils';
  * A blockly layout to host the Blockly editor.
  */
 export class BlocklyLayout extends SplitLayout {
+  private _rendermime: IRenderMimeRegistry;
   private _host: Widget;
   private _manager: BlocklyManager;
   private _workspace: Blockly.WorkspaceSvg;
   private _sessionContext: ISessionContext;
   private _cell: CodeCell;
+  private _description: Widget;
 
   /**
    * Construct a `BlocklyLayout`.
@@ -33,8 +35,14 @@ export class BlocklyLayout extends SplitLayout {
     factoryService: IEditorFactoryService
   ) {
     super({ renderer: SplitPanel.defaultRenderer, orientation: 'vertical' });
+    this._rendermime = rendermime;
     this._manager = manager;
     this._sessionContext = sessionContext;
+
+    // The widget that shows the description
+    this._description = new Widget();
+    this._description.addClass('jp-blockly-description');
+    this._description.node.style.overflowY = 'auto';
 
     // Creating the container for the Blockly editor
     // and the output area to render the execution replies.
@@ -104,6 +112,7 @@ export class BlocklyLayout extends SplitLayout {
    */
   init(): void {
     super.init();
+    this.addWidget(this._description);
     // Add the blockly container into the DOM
     this.addWidget(this._host);
     this.addWidget(this._cell);
@@ -251,6 +260,21 @@ export class BlocklyLayout extends SplitLayout {
     }
     if (change === 'toolbox') {
       this._workspace.updateToolbox(this._manager.toolbox as any);
+    }
+    if (change === 'description') {
+      if (this._manager.getDescription() !== undefined && this._manager.getDescription().length > 0) {
+        const descriptionElement = document.createElement('div');
+        descriptionElement.classList.add('jp-RenderedHTMLCommon', 'jp-RenderedMarkdown', 'jp-MarkdownOutput');
+        this._rendermime.markdownParser.render(this._manager.getDescription()).then((source: string) => {
+          descriptionElement.innerHTML = source;
+        });
+        this._description.node.innerHTML = '';
+        this._description.node.appendChild(descriptionElement);
+        this._description.show();
+      } else {
+        this._description.hide();
+        this._description.node.innerHTML = '';
+      }
     }
   }
 }
